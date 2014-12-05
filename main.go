@@ -1,89 +1,20 @@
 // fizzybuzzy project main.go
 package main
 
-import "flag"
-import "fmt"
+import (
+	"encoding/csv"
+	"flag"
+	"fmt"
+	"os"
+	"strconv"
+)
 
-// function version
-
-//func main() {
-
-//	for i := 1; i <= 100; i++ {
-
-//		x := fb(i)
-//		if len(x) > 0 {
-//			println(x)
-//		} else {
-//			println(i)
-//		}
-//	}
-//}
-
-//func fb(i int) string {
-//	var returnMe string
-//	if i%3 == 0 {
-//		returnMe = "Fizz"
-//	}
-//	if i%5 == 0 {
-//		returnMe += "Buzz"
-//	}
-//	return returnMe
-//}
-
-// straightforward version
-
-//func main() {
-
-//	for i := 1; i <= 100; i++ {
-
-//		if i%3 == 0 && i%5 == 0 {
-//			println("FizzBuzz")
-//		} else if i%3 == 0 {
-//			println("Fizz")
-//		} else if i%5 == 0 {
-//			println("Buzz")
-//		} else {
-//			println(i)
-//		}
-//	}
-//}
-
-// parameterized version with support for more than just fizz and buzz
-
-//func main() {
-
-//	MIN := 0
-//	MAX := 100
-//	STEP := 1
-
-//	fizzMap := make(map[int]string)
-//	fizzMap[3] = "Fizz"
-//	fizzMap[5] = "Buzz"
-//	fizzMap[7] = "Boom"
-
-//	for i := MIN; i <= MAX; i += STEP {
-//		//tried to have this in a sep func but had trouble passing in map
-//		var r string
-//		for k, v := range fizzMap {
-//			if i%k == 0 {
-//				r += v
-//			}
-//		}
-
-//		if len(r) > 0 {
-//			println(r)
-//		} else {
-//			println(i)
-//		}
-//	}
-//}
-
-// command line arguemnts version
 func main() {
 
 	MIN := flag.Int("min", 1, "min value of print range")
 	MAX := flag.Int("max", 100, "max value of print range")
 	STEP := flag.Int("step", 1, "step value for defined range")
+	FILE := flag.String("file", "", ".csv with int,string pairs. ex 3,fizz")
 	flag.Parse()
 
 	if *MAX < *MIN {
@@ -91,10 +22,7 @@ func main() {
 		return
 	}
 
-	fizzMap := make(map[int]string)
-	fizzMap[3] = "Fizz"
-	fizzMap[5] = "Buzz"
-	//fizzMap[7] = "Boom"
+	fizzMap := readValues(*FILE)
 
 	for i := *MIN; i <= *MAX; i += *STEP {
 		var r string
@@ -110,4 +38,39 @@ func main() {
 			println(i)
 		}
 	}
+}
+
+//takes a file name of a .csv, returns a map of contents
+func readValues(f string) map[int]string {
+
+	m := make(map[int]string)
+
+	file, _ := os.Open(f)
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+
+	for {
+
+		line, err := reader.Read()
+		if err != nil {
+			break
+		}
+
+		//ParseInt always comes back with int64
+		key, _ := strconv.ParseInt(line[0], 10, 0)
+
+		m[int(key)] = line[1]
+	}
+
+	// classic values. we should default these
+	// if we can't populate our map
+	if len(m) <= 0 {
+
+		m[3] = "Fizz"
+		m[5] = "Buzz"
+
+	}
+
+	return m
 }
